@@ -1,0 +1,58 @@
+name: label2file-dev
+
+services:
+  frps:
+    image: ghcr.io/fatedier/frps:v0.61.0
+    ports: [8080:8080/tcp]
+    entrypoint: sh
+    command:
+      - -euc
+      - |-
+        cat << EOF > /frps.toml
+        bindPort = 7000
+        vhostHTTPPort = 8080
+        subdomainHost = "example.org"
+        EOF
+        frps -c /frps.toml
+
+  frpc:
+    depends_on:
+      - frps
+    image: ghcr.io/fatedier/frpc:v0.61.0
+    entrypoint: sh
+    command:
+      - -euc
+      - |-
+        cat << EOF > /frpc.toml
+        serverAddr = "frps"
+        serverPort = 7000
+        includes = [
+          "/etc/frpc.d/*.toml"
+        ]
+        EOF
+        frpc -c /frpc.toml
+    volumes:
+      - ./.var/:/etc/frpc.d/:ro
+
+  label2file:
+    build:
+      context: .
+    environment:
+      - L2F_LABEL=frp
+      - L2F_FILENAME_FORMAT=/etc/frpc.d/{name}.toml
+      - L2F_CONTAINER_TO_RESTART=label2file-dev-frpc-1
+      - L2F_END_WITH_NEWLINE=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./.var/:/etc/frpc.d/:rw
+
+  whoami:
+    image: traefik/whoami:latest
+    labels:
+      frp: |-
+        [[proxies]]
+        type = "http"
+        name = "whoami"
+        subdomain = "www"
+        localIP = "whoami"
+        localPort = 80

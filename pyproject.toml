@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "label2file"
+version = "0.1.0"
+authors = ["Akira Yamazaki <chihsiao@outlook.com>"]
+description = "a label-to-file converter for Docker container configurations."
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12.0"
+docker = "^7.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
