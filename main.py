@@ -103,27 +103,30 @@ def try_to_restart_container():
 
 
 if __name__ == '__main__':
-    for container in docker_client.containers.list(filters={'label': [LABEL]}):
+    for container in docker_client.containers.list(filters={
+        'status': ['running'],
+        'label': [LABEL]
+    }):
         create_config(get_attrs(container))
         try_to_restart_container()
 
     try:
         for event in docker_client.events(decode=True, filters={
-            'event': ['create', 'destroy'],
+            'event': ['start', 'unpause', 'pause', 'die'],
             'type': 'container',
             'label': [LABEL]
         }):
             action, actor = event['Action'], event['Actor']
             attrs = actor['Attributes']
 
-            if action == 'create':
+            if action in ('start', 'unpause'):
                 try:
                     create_config(attrs)
                     try_to_restart_container()
                 except IOError as ex:
                     print(ex)
 
-            elif action == 'destroy':
+            elif action in ('pause', 'die'):
                 try:
                     os.remove(get_filename(attrs))
                     try_to_restart_container()
