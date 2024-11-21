@@ -117,8 +117,11 @@ if __name__ == '__main__':
             attrs = actor['Attributes']
 
             if action == 'create':
-                create_config(attrs)
-                try_to_restart_container()
+                try:
+                    create_config(attrs)
+                    try_to_restart_container()
+                except IOError as ex:
+                    print(ex)
 
             elif action == 'destroy':
                 try:
